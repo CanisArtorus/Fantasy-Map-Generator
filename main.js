@@ -11,7 +11,7 @@ const version = "1.4"; // generator version
 document.title += " v" + version;
 
 // Switches to disable/enable logging features
-const INFO = 0;
+const INFO = 1;
 const TIME = 0;
 const WARN = 1;
 const ERROR = 1;
@@ -747,8 +747,6 @@ function calculateMapCoordinates() {
 
   const lon = Math.min(graphWidth / graphHeight * latT / 2, 180);
   mapCoordinates = {latT, latN, latS, lonT: lon*2, lonW: -lon, lonE: lon};
-
-  grid.sizeModifier = (lon / 180) * (141 / grid.cellsX); // adjustment to world-map scale
 }
 
 // temperature model
@@ -790,7 +788,8 @@ function generatePrecipitation() {
   cells.prec = new Uint8Array(cells.i.length); // precipitation array
   const modifier = precInput.value / 100; // user's input
   const cellsX = grid.cellsX, cellsY = grid.cellsY;
-  const sizeMod = grid.sizeModifier;
+  const sizeMod = (mapCoordinates.lonT / 360) * (141 / cellsX); // adjustment to world-map scale
+  INFO && console.log("Scaling precipitation by " + sizeMod);
   let westerly = [], easterly = [], southerly = 0, northerly = 0;
 
   {// latitude bands
@@ -847,7 +846,7 @@ function generatePrecipitation() {
           if (cells.h[current+next] >= 20) {
             cells.prec[current+next] += Math.max(humidity / rand(10, 20), 1); // coastal precipitation
           } else {
-            humidity = Math.min(humidity + 5 * modifier * sizeMod, maxPrec); // wind gets more humidity passing water cell
+            humidity = Math.min(humidity + (5 * modifier * sizeMod), maxPrec); // wind gets more humidity passing water cell
             cells.prec[current] += 5 * modifier; // water cells precipitation (need to correctly pour water through lakes)
           }
           continue;
@@ -857,7 +856,7 @@ function generatePrecipitation() {
         const precipitation = getPrecipitation(humidity, current, next);
         cells.prec[current] += precipitation;
         const evaporation = precipitation > 1.5 ? 1 : 0; // some humidity evaporates back to the atmosphere
-        humidity = Math.min(Math.max(humidity - Math.min((precipitation + evaporation) * sizeMod, 1), 0), maxPrec);
+        humidity = Math.max(humidity - Math.min((precipitation - evaporation) * sizeMod, 1), 0);
       }
     }
   }
@@ -867,7 +866,7 @@ function generatePrecipitation() {
     const normalLoss = Math.max(humidity / (10 * modifier), 1); // precipitation in normal conditions
     const diff = Math.max(cells.h[i+n] - cells.h[i], 0); // difference in height
     const mod = (cells.h[i+n] / 70) ** 2; // 50 stands for hills, 70 for mountains
-    return Math.min(Math.max(normalLoss + diff * mod / sizeMod, 1), humidity); // maintain ridge loss
+    return Math.min(Math.max(normalLoss + (diff * mod / sizeMod), 1), humidity); // maintain ridge loss
   }
 
   void function drawWindDirection() {
