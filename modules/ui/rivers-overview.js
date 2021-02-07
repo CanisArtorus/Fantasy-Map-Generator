@@ -32,7 +32,7 @@ function overviewRivers() {
       const length = rn(r.length * distanceScaleInput.value) + " " + distanceUnitInput.value;
       const basin = pack.rivers.find(river => river.i === r.basin).name;
 
-      lines += `<div class="states" data-id=${r.i} data-name="${r.name}" data-type="${r.type}" data-length="${r.length}" data-basin="${basin}">
+      lines += `<div class="states" data-id=${r.i} data-name="${r.name}" data-type="${r.type}" data-length="${r.length}" data-flux="${r.flux}" data-basin="${basin}">
         <span data-tip="Click to focus on river" class="icon-dot-circled pointer"></span>
         <input data-tip="River proper name. Click to change. Ctrl + click to regenerate" class="riverName" value="${r.name}" autocorrect="off" spellcheck="false">
         <input data-tip="River type name. Click to change" class="riverType" value="${r.type}">
@@ -118,13 +118,14 @@ function overviewRivers() {
   }
 
   function downloadRiversData() {
-    let data = "Id,River,Type,Length,Basin\n"; // headers
+    let data = "Id,River,Type,Length,Flux,Basin\n"; // headers
 
     body.querySelectorAll(":scope > div").forEach(function(el) {
       data += el.dataset.id + ",";
       data += el.dataset.name + ",";
       data += el.dataset.type + ",";
       data += el.querySelector(".biomeArea").innerHTML + ",";
+      data += el.dataset.flux + ",";
       data += el.dataset.basin + "\n";
     });
 

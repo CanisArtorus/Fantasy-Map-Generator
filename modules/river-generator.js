@@ -172,7 +172,8 @@
           const [path, length] = getPath(riverEnhanced, width, increment, cells.h[source.cell] >= 20 ? .1 : .6);
           riverPaths.push([r, path, width, increment]);
           const parent = source.parent || 0;
-          pack.rivers.push({i:r, parent, length, source:source.cell, mouth:mouth.cell});
+          const flux = cells.fl[mouth.cell] || 0;
+          pack.rivers.push({i:r, parent, length, source:source.cell, mouth:mouth.cell, flux});
         } else {
           // remove too short rivers
           riverSegments.filter(s => cells.r[s.cell] === r).forEach(s => cells.r[s.cell] = 0);
