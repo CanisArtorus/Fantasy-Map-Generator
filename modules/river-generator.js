@@ -55,15 +55,15 @@
       const flowDown = function(min, mFlux, iFlux, ri, i = 0){
         if (cells.r[min]) { // downhill cell already has river assigned
           if (mFlux < iFlux) {
-            cells.conf[min] = cells.fl[min]; // mark confluence
+            cells.conf[min] = Math.min(cells.fl[min], 255); // mark confluence
             if (h[min] >= 20) riversData.find(r => r.river === cells.r[min]).parent = ri; // min river is a tributary of current river
             cells.r[min] = ri; // re-assign river if downhill part has less flux
           } else {
-            cells.conf[min] += iFlux; // mark confluence
+            cells.conf[min] = Math.min(cells.conf[min] + iFlux, 255); // mark confluence
             if (h[min] >= 20) riversData.find(r => r.river === ri).parent = cells.r[min]; // current river is a tributary of min river
           }
         } else cells.r[min] = ri; // assign the river to the downhill cell
-        
+
         if (h[min] < 20) {
           // pour water to the sea haven
           const oh = i ? cells.haven[i] : min;
@@ -94,9 +94,10 @@
         // lake outlets draw from lake
         let n = -1, out2 = 0;
         while (outlets.includes(i, n+1)) {
-          n = outlets.indexOf(i, n+1);  
+          n = outlets.indexOf(i, n+1);
           const l = features[n];
           if ( ! l ) {continue;}
+          if ( l.totalFlux < 30 ) {continue;} // Groundflow drained, no river outflow
           const j = cells.haven[i];
           // allow chain lakes to retain identity
           if(cells.r[j] !== l.river) {
@@ -225,7 +226,7 @@
         }
       }
       for (const i of land) {
-        const minHeight = d3.min(cells.c[i].map(c => cells.t[c] > 0 ? h[c] : 
+        const minHeight = d3.min(cells.c[i].map(c => cells.t[c] > 0 ? h[c] :
           pack.features[cells.f[c]].height || h[c] // NB undefined is falsy (a || b is short for a ? a : b)
           ));
         if (minHeight === 100) continue; // already max height
